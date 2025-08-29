@@ -1,22 +1,18 @@
 package HTTP;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Date;
+import java.io.IOException;
 
 public class Main {
-    public static void main(String[] args) throws Exception {
-        final ServerSocket server = new ServerSocket(8080);
-        System.out.println("Listening for connection on port 8080 ....");
-        while (true) {
-            try (Socket socket = server.accept()) {
-                Date today = new Date();
-                String httpResponse = "HTTP/1.1 200 OK\r\n\r\n" + today;
-                socket.getOutputStream()
-                        .write(httpResponse.getBytes("UTF-8"));
-            }
-        }
+    public static void main(String[] args) throws IOException {
+        System.out.println("Starting HTTP Server...");
+        
+        // Default port 8080 if no port specified
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
+        
+        Server server = new Server(port);
+        server.start();
+        
+        System.out.println("HTTP Server started on port " + port);
+        System.out.println("Press Ctrl+C to stop the server");
     }
 }
