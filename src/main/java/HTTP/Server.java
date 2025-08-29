@@ -46,13 +46,8 @@ public class Server {
     }
     
     private void handleConnection(Socket clientSocket) {
-        try {
-            // We'll implement this in the next step
-            System.out.println("New connection from: " + clientSocket.getInetAddress());
-            clientSocket.close();
-        } catch (IOException e) {
-            System.err.println("Error handling connection: " + e.getMessage());
-        }
+        // Use our enhanced connection handler
+        handleConnection.handleConnection(clientSocket);
     }
     
     public void stop() {
