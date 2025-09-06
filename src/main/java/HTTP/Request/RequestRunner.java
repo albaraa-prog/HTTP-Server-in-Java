@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Request;
 
 import java.io.IOException;
 import java.net.Socket;

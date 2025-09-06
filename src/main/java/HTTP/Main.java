@@ -1,5 +1,7 @@
 package HTTP;
 
+import HTTP.Server.Server;
+
 import java.io.IOException;
 
 public class Main {
@@ -13,6 +15,7 @@ public class Main {
         server.start();
         
         System.out.println("HTTP Server started on port " + port);
+        System.out.println("Server is running on http://localhost:8080");
         System.out.println("Press Ctrl+C to stop the server");
     }
 }

@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Request;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import HTTP.Protocol.HttpMethod;
+import HTTP.Protocol.HttpRequest;
 
 /**
  * HTTP request decoder that parses raw HTTP requests from input streams.
@@ -63,7 +66,7 @@ public class HttpDecoder {
             
             String method = parts[0];
             String uri = parts[1];
-            String version = parts[2];
+            // String version = parts[2]; // HTTP version not used in current implementation
             
             // Parse HTTP method
             HttpMethod httpMethod = parseHttpMethod(method);
@@ -80,11 +83,15 @@ public class HttpDecoder {
             // Read headers
             Map<String, List<String>> headers = readHeaders(reader);
             
+            // Read body if present
+            String body = readBody(reader, headers);
+            
             // Create HttpRequest
             HttpRequest request = new HttpRequest.Builder()
                     .setHttpMethod(httpMethod)
                     .setUri(requestUri)
                     .setRequestHeaders(headers)
+                    .setBody(body)
                     .build();
             
             return Optional.of(request);
@@ -161,5 +168,49 @@ public class HttpDecoder {
         }
         
         return headers;
+    }
+    
+    /**
+     * Reads the request body if present.
+     * 
+     * <p>This method checks for a Content-Length header and reads the specified
+     * number of characters from the input stream. If no Content-Length is present,
+     * no body is read.
+     * 
+     * @param reader the BufferedReader to read from
+     * @param headers the request headers to check for Content-Length
+     * @return the request body as a string, or null if no body
+     * @throws IOException if an I/O error occurs while reading
+     */
+    private static String readBody(BufferedReader reader, Map<String, List<String>> headers) throws IOException {
+        // Check for Content-Length header
+        List<String> contentLengthValues = headers.get("Content-Length");
+        if (contentLengthValues == null || contentLengthValues.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            int contentLength = Integer.parseInt(contentLengthValues.get(0));
+            if (contentLength <= 0) {
+                return null;
+            }
+            
+            // Read the specified number of characters
+            char[] bodyChars = new char[contentLength];
+            int totalRead = 0;
+            while (totalRead < contentLength) {
+                int charsRead = reader.read(bodyChars, totalRead, contentLength - totalRead);
+                if (charsRead == -1) {
+                    break; // End of stream
+                }
+                totalRead += charsRead;
+            }
+            
+            return new String(bodyChars, 0, totalRead);
+            
+        } catch (NumberFormatException e) {
+            // Invalid Content-Length header
+            return null;
+        }
     }
 }

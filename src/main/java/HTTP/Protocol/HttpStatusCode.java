@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Protocol;
 
 import java.util.HashMap;
 import java.util.Map;

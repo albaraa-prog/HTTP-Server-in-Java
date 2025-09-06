@@ -1,4 +1,6 @@
-package HTTP;
+package HTTP.Handler;
+
+import HTTP.Request.RequestRunner;
 
 import java.util.Map;
 

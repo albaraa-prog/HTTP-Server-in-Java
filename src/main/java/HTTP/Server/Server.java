@@ -1,12 +1,4 @@
-package HTTP;
-
-import HTTP.ErrorHandling.ErrorHandler;
-import HTTP.ErrorHandling.ServerLogger;
-import HTTP.Protocol.HttpRequest;
-import HTTP.Protocol.HttpResponse;
-import HTTP.Request.HttpDecoder;
-import HTTP.Request.HttpRequestHandler;
-import HTTP.Static.StaticFileHandler;
+package HTTP.Server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -15,6 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import HTTP.ErrorHandling.ErrorHandler;
+import HTTP.ErrorHandling.ServerLogger;
+import HTTP.Protocol.HttpRequest;
+import HTTP.Protocol.HttpResponse;
+import HTTP.Request.HttpDecoder;
+import HTTP.Request.HttpRequestHandler;
+import HTTP.Static.StaticFileHandler;
 
 /**
  * Main HTTP server class with integrated Phase 3 features.
@@ -96,6 +96,14 @@ public class Server {
                 return createFileListingResponse();
             }
         });
+        
+        // Add calculator endpoint
+        routes.put("POST/calculate", new HttpRequestHandler() {
+            @Override
+            public HttpResponse handle(HttpRequest request) {
+                return handleCalculation(request);
+            }
+        });
     }
     
     /**
@@ -114,6 +122,7 @@ public class Server {
         if (path.startsWith("/")) {
             path = path.substring(1);
         }
+        
         
         if (staticFileHandler.canServe(path)) {
             return staticFileHandler.serveFile(path);
@@ -182,6 +191,310 @@ public class Server {
         headers.put("Content-Length", java.util.List.of(String.valueOf(fileList.length())));
         
         return new HttpResponse(200, headers, fileList.toString());
+    }
+    
+    /**
+     * Handles calculation requests and returns the result.
+     * 
+     * @param request the HTTP request containing the calculation expression
+     * @return HttpResponse with calculation result or error
+     */
+    private HttpResponse handleCalculation(HttpRequest request) {
+        try {
+            // Get the request body
+            String body = request.getBody();
+            if (body == null) {
+                body = "";
+            }
+            
+            // Parse JSON request
+            String expression = parseJsonExpression(body);
+            if (expression == null || expression.trim().isEmpty()) {
+                return createErrorResponse(400, "Invalid request: expression is required");
+            }
+            
+            // Validate and calculate
+            double result = calculateExpression(expression);
+            
+            // Create JSON response
+            String jsonResponse = String.format("{\"result\": %.10g, \"expression\": \"%s\"}", 
+                                              result, expression.replace("\"", "\\\""));
+            
+            Map<String, java.util.List<String>> headers = new HashMap<>();
+            headers.put("Content-Type", java.util.List.of("application/json"));
+            headers.put("Content-Length", java.util.List.of(String.valueOf(jsonResponse.length())));
+            headers.put("Access-Control-Allow-Origin", java.util.List.of("*"));
+            headers.put("Access-Control-Allow-Methods", java.util.List.of("POST, OPTIONS"));
+            headers.put("Access-Control-Allow-Headers", java.util.List.of("Content-Type"));
+            
+            return new HttpResponse(200, headers, jsonResponse);
+            
+        } catch (Exception e) {
+            logger.logError("Calculation error", e);
+            return createErrorResponse(500, "Calculation failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Parses the JSON expression from the request body.
+     * 
+     * @param body the request body
+     * @return the expression string or null if invalid
+     */
+    private String parseJsonExpression(String body) {
+        try {
+            // Simple JSON parsing for {"expression": "..."}
+            if (body.contains("\"expression\"")) {
+                // Find the start of the expression value
+                int expressionKeyStart = body.indexOf("\"expression\"");
+                int colonIndex = body.indexOf(":", expressionKeyStart);
+                
+                if (colonIndex == -1) {
+                    return null;
+                }
+                
+                // Skip whitespace after colon
+                int valueStart = colonIndex + 1;
+                while (valueStart < body.length() && Character.isWhitespace(body.charAt(valueStart))) {
+                    valueStart++;
+                }
+                
+                // Look for opening quote
+                if (valueStart >= body.length() || body.charAt(valueStart) != '"') {
+                    return null;
+                }
+                
+                int quoteStart = valueStart;
+                int quoteEnd = body.indexOf("\"", quoteStart + 1);
+                
+                if (quoteEnd != -1 && quoteEnd > quoteStart + 1) {
+                    return body.substring(quoteStart + 1, quoteEnd);
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Calculates a mathematical expression safely.
+     * 
+     * @param expression the mathematical expression
+     * @return the calculation result
+     * @throws IllegalArgumentException if the expression is invalid
+     */
+    private double calculateExpression(String expression) {
+        // Remove whitespace
+        expression = expression.replaceAll("\\s+", "");
+        
+        // Check if expression is empty
+        if (expression.isEmpty()) {
+            throw new IllegalArgumentException("Empty expression");
+        }
+        
+        // Validate expression contains only allowed characters (including scientific notation and 'x' for multiplication)
+        // Allow digits, operators, parentheses, decimal points, and scientific notation
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (!Character.isDigit(c) && c != '+' && c != '-' && c != '*' && c != '/' && c != '(' && c != ')' && c != '.' && c != 'e' && c != 'E' && c != 'x') {
+                throw new IllegalArgumentException("Invalid character '" + c + "' at position " + i + " in expression: '" + expression + "'");
+            }
+        }
+        
+        // Convert 'x' to '*' for multiplication
+        expression = expression.replace('x', '*');
+        
+        // Check for balanced parentheses
+        int parenCount = 0;
+        for (char c : expression.toCharArray()) {
+            if (c == '(') parenCount++;
+            if (c == ')') parenCount--;
+            if (parenCount < 0) {
+                throw new IllegalArgumentException("Unbalanced parentheses");
+            }
+        }
+        if (parenCount != 0) {
+            throw new IllegalArgumentException("Unbalanced parentheses");
+        }
+        
+        // Check for division by zero patterns
+        if (expression.contains("/0") && !expression.contains("/0.")) {
+            throw new IllegalArgumentException("Division by zero");
+        }
+        
+        // Use a simple expression evaluator
+        return evaluateExpression(expression);
+    }
+    
+    /**
+     * Evaluates a mathematical expression using a simple recursive descent parser.
+     * 
+     * @param expression the expression to evaluate
+     * @return the result
+     */
+    private double evaluateExpression(String expression) {
+        // Remove all whitespace
+        expression = expression.replaceAll("\\s+", "");
+        
+        // Handle parentheses
+        while (expression.contains("(")) {
+            int openParen = expression.lastIndexOf("(");
+            int closeParen = findMatchingCloseParen(expression, openParen);
+            
+            if (closeParen == -1) {
+                throw new IllegalArgumentException("Unbalanced parentheses");
+            }
+            
+            String innerExpression = expression.substring(openParen + 1, closeParen);
+            double innerResult = evaluateExpression(innerExpression);
+            
+            expression = expression.substring(0, openParen) + 
+                        String.format("%.10g", innerResult) + 
+                        expression.substring(closeParen + 1);
+        }
+        
+        // Evaluate multiplication and division
+        while (expression.contains("*") || expression.contains("/")) {
+            int mulIndex = expression.indexOf("*");
+            int divIndex = expression.indexOf("/");
+            
+            int opIndex;
+            if (mulIndex == -1) opIndex = divIndex;
+            else if (divIndex == -1) opIndex = mulIndex;
+            else opIndex = Math.min(mulIndex, divIndex);
+            
+            double left = getLeftOperand(expression, opIndex);
+            double right = getRightOperand(expression, opIndex);
+            
+            double result;
+            if (expression.charAt(opIndex) == '*') {
+                result = left * right;
+            } else {
+                if (right == 0) {
+                    throw new IllegalArgumentException("Division by zero");
+                }
+                result = left / right;
+            }
+            
+            expression = replaceOperation(expression, opIndex, result);
+        }
+        
+        // Evaluate addition and subtraction
+        while (expression.contains("+") || (expression.contains("-") && !expression.startsWith("-"))) {
+            int addIndex = expression.indexOf("+");
+            int subIndex = expression.indexOf("-", 1); // Skip leading minus
+            
+            int opIndex;
+            if (addIndex == -1) opIndex = subIndex;
+            else if (subIndex == -1) opIndex = addIndex;
+            else opIndex = Math.min(addIndex, subIndex);
+            
+            double left = getLeftOperand(expression, opIndex);
+            double right = getRightOperand(expression, opIndex);
+            
+            double result;
+            if (expression.charAt(opIndex) == '+') {
+                result = left + right;
+            } else {
+                result = left - right;
+            }
+            
+            expression = replaceOperation(expression, opIndex, result);
+        }
+        
+        // Parse final number (including scientific notation)
+        try {
+            return Double.parseDouble(expression);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid expression");
+        }
+    }
+    
+    private int findMatchingCloseParen(String expression, int openParen) {
+        int count = 1;
+        for (int i = openParen + 1; i < expression.length(); i++) {
+            if (expression.charAt(i) == '(') count++;
+            if (expression.charAt(i) == ')') count--;
+            if (count == 0) return i;
+        }
+        return -1;
+    }
+    
+    private double getLeftOperand(String expression, int opIndex) {
+        int start = opIndex - 1;
+        while (start >= 0 && (Character.isDigit(expression.charAt(start)) || 
+                              expression.charAt(start) == '.' || 
+                              expression.charAt(start) == '-' ||
+                              expression.charAt(start) == 'e' ||
+                              expression.charAt(start) == 'E')) {
+            start--;
+        }
+        if (start < 0 || expression.charAt(start) == '+' || expression.charAt(start) == '-' || 
+            expression.charAt(start) == '*' || expression.charAt(start) == '/') {
+            start++;
+        }
+        return Double.parseDouble(expression.substring(start, opIndex));
+    }
+    
+    private double getRightOperand(String expression, int opIndex) {
+        int end = opIndex + 1;
+        if (expression.charAt(end) == '-') end++; // Handle negative numbers
+        while (end < expression.length() && (Character.isDigit(expression.charAt(end)) || 
+                                            expression.charAt(end) == '.' ||
+                                            expression.charAt(end) == 'e' ||
+                                            expression.charAt(end) == 'E')) {
+            end++;
+        }
+        return Double.parseDouble(expression.substring(opIndex + 1, end));
+    }
+    
+    private String replaceOperation(String expression, int opIndex, double result) {
+        int leftStart = opIndex - 1;
+        while (leftStart >= 0 && (Character.isDigit(expression.charAt(leftStart)) || 
+                                 expression.charAt(leftStart) == '.' || 
+                                 expression.charAt(leftStart) == '-' ||
+                                 expression.charAt(leftStart) == 'e' ||
+                                 expression.charAt(leftStart) == 'E')) {
+            leftStart--;
+        }
+        if (leftStart < 0 || expression.charAt(leftStart) == '+' || expression.charAt(leftStart) == '-' || 
+            expression.charAt(leftStart) == '*' || expression.charAt(leftStart) == '/') {
+            leftStart++;
+        }
+        
+        int rightEnd = opIndex + 1;
+        if (expression.charAt(rightEnd) == '-') rightEnd++; // Handle negative numbers
+        while (rightEnd < expression.length() && (Character.isDigit(expression.charAt(rightEnd)) || 
+                                                 expression.charAt(rightEnd) == '.' ||
+                                                 expression.charAt(rightEnd) == 'e' ||
+                                                 expression.charAt(rightEnd) == 'E')) {
+            rightEnd++;
+        }
+        
+        return expression.substring(0, leftStart) + 
+               String.format("%.10g", result) + 
+               expression.substring(rightEnd);
+    }
+    
+    /**
+     * Creates an error response with JSON format.
+     * 
+     * @param statusCode the HTTP status code
+     * @param message the error message
+     * @return HttpResponse with error
+     */
+    private HttpResponse createErrorResponse(int statusCode, String message) {
+        String jsonResponse = String.format("{\"error\": \"%s\"}", message.replace("\"", "\\\""));
+        
+        Map<String, java.util.List<String>> headers = new HashMap<>();
+        headers.put("Content-Type", java.util.List.of("application/json"));
+        headers.put("Content-Length", java.util.List.of(String.valueOf(jsonResponse.length())));
+        headers.put("Access-Control-Allow-Origin", java.util.List.of("*"));
+        headers.put("Access-Control-Allow-Methods", java.util.List.of("POST, OPTIONS"));
+        headers.put("Access-Control-Allow-Headers", java.util.List.of("Content-Type"));
+        
+        return new HttpResponse(statusCode, headers, jsonResponse);
     }
     
     /**

@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Handler;
 
 import HTTP.Protocol.HttpRequest;
 import HTTP.Request.HttpDecoder;

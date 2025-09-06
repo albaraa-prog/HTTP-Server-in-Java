@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Protocol;
 
 public enum HttpMethod {
     GET,

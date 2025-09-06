@@ -1,4 +1,6 @@
-package HTTP;
+package HTTP.Request;
+
+import HTTP.Protocol.HttpMethod;
 
 import java.util.HashMap;
 import java.util.Map;

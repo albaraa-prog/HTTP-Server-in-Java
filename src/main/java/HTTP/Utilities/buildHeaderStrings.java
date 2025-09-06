@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Utilities;
 
 import java.util.ArrayList;
 import java.util.List;

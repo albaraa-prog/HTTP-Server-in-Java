@@ -1,6 +1,7 @@
-package HTTP;
+package HTTP.Handler;
 
 import HTTP.Protocol.HttpRequest;
+import HTTP.Request.RequestRunner;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

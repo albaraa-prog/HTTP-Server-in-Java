@@ -1,4 +1,7 @@
-package HTTP;
+package HTTP.Utilities;
+
+import HTTP.Protocol.HttpResponse;
+import HTTP.Protocol.HttpStatusCode;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

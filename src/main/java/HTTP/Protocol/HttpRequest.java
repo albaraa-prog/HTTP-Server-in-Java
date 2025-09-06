@@ -1,4 +1,4 @@
-package HTTP;
+package HTTP.Protocol;
 
 import java.net.URI;
 import java.util.List;
@@ -15,6 +15,7 @@ public class HttpRequest {
     private final HttpMethod httpMethod;
     private final URI uri;
     private final Map<String, List<String>> requestHeaders;
+    private final String body;
 
     /**
      * Private constructor for HttpRequest. Use the Builder pattern to create instances.
@@ -22,13 +23,16 @@ public class HttpRequest {
      * @param opCode the HTTP method (GET, POST, etc.)
      * @param uri the request URI
      * @param requestHeaders the HTTP headers as a map of header names to lists of values
+     * @param body the request body
      */
     private HttpRequest(HttpMethod opCode,
                         URI uri,
-                        Map<String, List<String>> requestHeaders) {
+                        Map<String, List<String>> requestHeaders,
+                        String body) {
         this.httpMethod = opCode;
         this.uri = uri;
         this.requestHeaders = requestHeaders;
+        this.body = body;
     }
 
     /**
@@ -59,6 +63,15 @@ public class HttpRequest {
     }
 
     /**
+     * Gets the request body.
+     * 
+     * @return the request body as a string, or null if no body
+     */
+    public String getBody() {
+        return body;
+    }
+
+    /**
      * Builder class for creating HttpRequest instances.
      * Implements the Builder pattern to provide a fluent API for constructing requests.
      * 
@@ -69,6 +82,7 @@ public class HttpRequest {
         private HttpMethod httpMethod;
         private URI uri;
         private Map<String, List<String>> requestHeaders;
+        private String body;
 
         /**
          * Default constructor for Builder.
@@ -110,6 +124,17 @@ public class HttpRequest {
         }
 
         /**
+         * Sets the request body.
+         * 
+         * @param body the request body to set
+         * @return this Builder instance for method chaining
+         */
+        public Builder setBody(String body) {
+            this.body = body;
+            return this;
+        }
+
+        /**
          * Builds and returns a new HttpRequest instance.
          * 
          * @return a new HttpRequest with the configured values
@@ -127,7 +152,7 @@ public class HttpRequest {
                 requestHeaders = Map.of(); // Use empty map as default
             }
             
-            return new HttpRequest(httpMethod, uri, requestHeaders);
+            return new HttpRequest(httpMethod, uri, requestHeaders, body);
         }
     }
 }

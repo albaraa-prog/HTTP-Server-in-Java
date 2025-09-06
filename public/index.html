@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Server - Welcome</title>
+    <style>
+        /* Modern Dark Mode Styles */
+        :root {
+          --bg-primary: #0a0a0a;
+          --bg-secondary: #111111;
+          --bg-tertiary: #1a1a1a;
+          --bg-glass: rgba(255, 255, 255, 0.05);
+          --text-primary: #ffffff;
+          --text-secondary: #b0b0b0;
+          --text-accent: #8b5cf6;
+          --accent-primary: #8b5cf6;
+          --accent-secondary: #06b6d4;
+          --accent-success: #10b981;
+          --accent-warning: #f59e0b;
+          --accent-error: #ef4444;
+          --border-subtle: rgba(255, 255, 255, 0.1);
+          --border-accent: rgba(139, 92, 246, 0.3);
+          --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+          --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.4);
+          --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          --gradient-glass: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.1),
+            rgba(255, 255, 255, 0.05)
+          );
+          --gradient-accent: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        }
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            Oxygen, Ubuntu, Cantarell, sans-serif;
+          line-height: 1.6;
+          color: var(--text-primary);
+          background: var(--bg-primary);
+          min-height: 100vh;
+          position: relative;
+        }
+
+        /* Animated background */
+        body::before {
+          content: "";
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(
+              circle at 20% 20%,
+              rgba(139, 92, 246, 0.1) 0%,
+              transparent 50%
+            ),
+            radial-gradient(
+              circle at 80% 80%,
+              rgba(6, 182, 212, 0.1) 0%,
+              transparent 50%
+            ),
+            radial-gradient(
+              circle at 40% 60%,
+              rgba(16, 185, 129, 0.05) 0%,
+              transparent 50%
+            );
+          animation: backgroundShift 20s ease-in-out infinite;
+          pointer-events: none;
+          z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
+        }
+
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+
+        /* Modern glassmorphism header */
+        .hero {
+          text-align: center;
+          padding: 80px 20px;
+          margin-bottom: 40px;
+          background: var(--gradient-glass);
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--border-subtle);
+          border-radius: 24px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hero::before {
+          content: "";
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: conic-gradient(
+            from 0deg,
+            transparent,
+            rgba(139, 92, 246, 0.1),
+            transparent
+          );
+          animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        .hero-content {
+          position: relative;
+          z-index: 1;
+        }
+
+        .hero h1 {
+          font-size: clamp(2.5rem, 5vw, 4rem);
+          font-weight: 800;
+          margin-bottom: 20px;
+          background: var(--gradient-accent);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          letter-spacing: -0.025em;
+        }
+
+        .hero p {
+          font-size: 1.25rem;
+          color: var(--text-secondary);
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        /* Content cards with modern glassmorphism */
+        .content {
+          background: var(--gradient-glass);
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--border-subtle);
+          border-radius: 24px;
+          padding: 40px;
+          margin: 30px 0;
+          box-shadow: var(--shadow-glass);
+          transition: all 0.3s ease;
+        }
+
+        .content:hover {
+          border-color: var(--border-accent);
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-hover);
+        }
+
+        .content h2 {
+          color: var(--text-primary);
+          margin-bottom: 24px;
+          font-size: 1.875rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .section-icon {
+          font-size: 1.5rem;
+        }
+
+        .features ul {
+          list-style: none;
+          display: grid;
+          gap: 16px;
+        }
+
+        .features li {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: var(--bg-glass);
+          border-radius: 12px;
+          border: 1px solid var(--border-subtle);
+          transition: all 0.3s ease;
+        }
+
+        .features li:hover {
+          background: rgba(139, 92, 246, 0.1);
+          border-color: var(--border-accent);
+          transform: translateX(8px);
+        }
+
+        .features li::before {
+          content: "-";
+          font-size: 1.25rem;
+          flex-shrink: 0;
+        }
+
+        /* Status section with modern indicators */
+        .status {
+          text-align: center;
+          padding: 40px;
+          background: var(--gradient-glass);
+          border-radius: 20px;
+          margin: 30px 0;
+          position: relative;
+        }
+
+        .status-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 24px;
+          border-radius: 100px;
+          font-weight: 600;
+          margin-top: 16px;
+          background: var(--accent-success);
+          color: white;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .status-indicator::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+          );
+          animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+          100% {
+            left: 100%;
+          }
+        }
+
+        .pulse-dot {
+          width: 8px;
+          height: 8px;
+          background: white;
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.2);
+          }
+        }
+
+        /* Modern Calculator - Improved Design */
+.calculator {
+  margin: 40px 0;
+  text-align: center;
+  background: var(--gradient-glass);
+  border-radius: 24px;
+  padding: 40px;
+  border: 1px solid var(--border-subtle);
+}
+
+.calc-description {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+/* Container for Calculator */
+.calc-container {
+  display: inline-block;
+  padding: 24px;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  box-shadow: var(--shadow-glass);
+  border: 1px solid var(--border-subtle);
+  max-width: 340px;
+  width: 100%;
+}
+
+/* Display */
+.calc-display-container {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+#calc-display {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.8rem;
+  text-align: right;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-weight: 600;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Status label */
+.calc-status {
+  position: absolute;
+  top: -14px;
+  right: 10px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.calc-status.calculating {
+  background: var(--accent-warning);
+  color: white;
+}
+
+.calc-status.success {
+  background: var(--accent-success);
+  color: white;
+}
+
+.calc-status.error {
+  background: var(--accent-error);
+  color: white;
+}
+
+/* Buttons Grid */
+.calc-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0 auto 16px;
+  max-width: 300px;
+}
+
+/* Base button */
+.btn {
+  height: 55px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.btn:hover {
+  background: var(--bg-glass);
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+/* Color variations */
+.btn-number {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+.btn-operator {
+  background: linear-gradient(135deg, #06b6d4, #0ea5e9);
+}
+
+.btn-function {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Fix equals button so it doesn't push + down */
+.btn-equals {
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  grid-column: span 1; /* Only one column */
+}
+
+
+/* History Box */
+.calc-history {
+  max-height: 120px;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--border-subtle);
+  font-size: 0.85rem;
+}
+
+
+        /* Modern link grid */
+        .link-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 24px;
+          margin-top: 24px;
+        }
+
+        .link-card {
+          display: block;
+          padding: 32px;
+          background: var(--gradient-glass);
+          border-radius: 20px;
+          text-decoration: none;
+          color: var(--text-primary);
+          transition: all 0.3s ease;
+          border: 1px solid var(--border-subtle);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .link-card::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 2px;
+          background: var(--gradient-accent);
+          transition: left 0.3s ease;
+        }
+
+        .link-card:hover::before {
+          left: 0;
+        }
+
+        .link-card:hover {
+          background: rgba(139, 92, 246, 0.1);
+          border-color: var(--border-accent);
+          transform: translateY(-8px);
+          box-shadow: var(--shadow-hover);
+        }
+
+        .link-card h3 {
+          color: var(--accent-primary);
+          margin-bottom: 12px;
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+
+        .link-card p {
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        /* Modern footer */
+        .footer {
+          text-align: center;
+          padding: 40px;
+          color: var(--text-secondary);
+          border-top: 1px solid var(--border-subtle);
+          margin-top: 60px;
+        }
+
+        .footer p {
+          margin: 8px 0;
+        }
+
+        #current-time {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.875rem;
+          color: var(--accent-secondary);
+        }
+
+        /* Ripple effect */
+        .ripple {
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(139, 92, 246, 0.3);
+          transform: scale(0);
+          animation: ripple-animation 0.6s ease-out;
+          pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+          .container {
+            padding: 16px;
+          }
+
+          .hero {
+            padding: 60px 20px;
+          }
+
+          .content {
+            padding: 24px;
+          }
+
+          .calc-container {
+            padding: 16px;
+            max-width: 100%;
+          }
+
+          .calc-buttons {
+            gap: 8px;
+            max-width: 100%;
+          }
+
+          .btn {
+            min-height: 45px;
+            font-size: 1rem;
+          }
+
+          .btn-equals {
+            height: 50px;
+          }
+
+          #calc-display {
+            font-size: 1.25rem;
+            padding: 12px;
+          }
+
+          .link-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: var(--border-subtle);
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: var(--border-accent);
+        }
+
+        .btn:focus {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="hero">
+            <div class="hero-content">
+                <h1 data-i18n="title">HTTP Server in Java</h1>
+                <p data-i18n="subtitle">A simple, multi-threaded HTTP server built from scratch</p>
+            </div>
+        </header>
+
+        <main class="content">
+            <section class="features">
+                <h2><span class="section-icon">⚡</span><span data-i18n="features">Features</span></h2>
+                <ul>
+                    <li data-i18n="feature1">Multi-threaded connection handling</li>
+                    <li data-i18n="feature2">Static file serving</li>
+                    <li data-i18n="feature3">Comprehensive error handling</li>
+                    <li data-i18n="feature4">Logging and monitoring</li>
+                    <li data-i18n="feature5">Configuration management</li>
+                    <li data-i18n="feature6">Clean, modular architecture</li>
+                </ul>
+            </section>
+
+            <section class="status">
+                <h2><span class="section-icon">📊</span><span data-i18n="serverStatus">Server Status</span></h2>
+                <p data-i18n="statusMessage">Server is running successfully!</p>
+                <div class="status-indicator online">
+                    <div class="pulse-dot"></div>
+                    <span data-i18n="online">Online</span>
+                </div>
+            </section>
+
+            <section class="calculator">
+                <h2><span class="section-icon">🧮</span><span data-i18n="calculator">Calculator</span></h2>
+                <p class="calc-description" data-i18n="calcDescription">Server-powered calculations with real-time processing</p>
+                <div class="calc-container">
+                    <div class="calc-display-container">
+                        <input type="text" id="calc-display" readonly placeholder="0">
+                        <div class="calc-status" id="calc-status"></div>
+                    </div>
+                    <div class="calc-buttons">
+                        <button class="btn btn-function" id="clear">C</button>
+                        <button class="btn btn-function" id="backspace">⌫</button>
+                        <button class="btn btn-operator" data-value="(">(</button>
+                        <button class="btn btn-operator" data-value=")">)</button>
+                        <button class="btn btn-number" data-value="7">7</button>
+                        <button class="btn btn-number" data-value="8">8</button>
+                        <button class="btn btn-number" data-value="9">9</button>
+                        <button class="btn btn-operator" data-value="/">÷</button>
+                        <button class="btn btn-number" data-value="4">4</button>
+                        <button class="btn btn-number" data-value="5">5</button>
+                        <button class="btn btn-number" data-value="6">6</button>
+                        <button class="btn btn-operator" data-value="*">×</button>
+                        <button class="btn btn-number" data-value="1">1</button>
+                        <button class="btn btn-number" data-value="2">2</button>
+                        <button class="btn btn-number" data-value="3">3</button>
+                        <button class="btn btn-operator" data-value="-">−</button>
+                        <button class="btn btn-number" data-value="0">0</button>
+                        <button class="btn btn-number" data-value=".">.</button>
+                        <button class="btn btn-equals" id="equals">=</button>
+                        <button class="btn btn-operator" data-value="+">+</button>
+                    </div>
+                    <div class="calc-history" id="calc-history"></div>
+                </div>
+            </section>
+
+            <section class="links">
+                <h2><span class="section-icon">🔗</span><span data-i18n="quickLinks">Quick Links</span></h2>
+                <div class="link-grid">
+                    <a href="/metrics" class="link-card">
+                        <h3 data-i18n="metrics">Metrics</h3>
+                        <p data-i18n="metricsDesc">View server performance metrics</p>
+                    </a>
+                    <a href="/config" class="link-card">
+                        <h3 data-i18n="configuration">Configuration</h3>
+                        <p data-i18n="configDesc">View server configuration</p>
+                    </a>
+                    <a href="/files" class="link-card">
+                        <h3 data-i18n="files">Files</h3>
+                        <p data-i18n="filesDesc">Browse static files</p>
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p data-i18n="footerText">Built with passion for learning HTTP server development</p>
+            <p id="current-time"></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
