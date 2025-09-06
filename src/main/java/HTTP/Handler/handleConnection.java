@@ -1,5 +1,8 @@
 package HTTP;
 
+import HTTP.Protocol.HttpRequest;
+import HTTP.Request.HttpDecoder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

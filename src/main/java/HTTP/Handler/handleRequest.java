@@ -1,5 +1,7 @@
 package HTTP;
 
+import HTTP.Protocol.HttpRequest;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Map;

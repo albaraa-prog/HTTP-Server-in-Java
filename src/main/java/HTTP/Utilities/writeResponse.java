@@ -29,8 +29,8 @@ public class writeResponse {
             } else {
                 outputStream.write("\r\n");
             }
-        } catch (Exception ignored) {
-            // Log error in future
+        } catch (Exception e) {
+            System.out.println("Write Response: " + e.getMessage());
         }
     }
 }
